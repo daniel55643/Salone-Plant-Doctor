@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Salone Plant Doctor - Full Flow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Custom Font and Global Styles */
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f8fafc; /* Light off-white background */
+      }
+      .deep-green-bg {
+        background-color: #1c5b32;
+      }
+      .accent-green-bg {
+        background-color: #34d399;
+      }
+
+      /* --- Splash Screen Container --- */
+      #splash-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        transition: opacity 0.5s ease-out;
+      }
+
+      /* 1. Overall Logo Pulse Animation (for the whole container) */
+      @keyframes logo-pulse {
+        0% {
+          transform: scale(0.9);
+          opacity: 0.85;
+        }
+        50% {
+          transform: scale(1.05);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      .logo-animated {
+        animation: logo-pulse 1.5s ease-in-out infinite alternate;
+      }
+
+      /* 2. Heart Leaf Floating Animation (internal element) */
+      @keyframes leaf-float {
+        0% {
+          transform: translateY(0) rotate(0deg);
+        }
+        50% {
+          transform: translateY(-5px) rotate(-1deg);
+        }
+        100% {
+          transform: translateY(0) rotate(0deg);
+        }
+      }
+
+      .animate-leaf {
+        transform-origin: 100px 100px;
+        animation: leaf-float 3s ease-in-out infinite;
+      }
+
+      /* Utility class to hide screens */
+      .hidden-screen {
+        display: none !important;
+      }
+
+      /* Loading bar animation */
+      @keyframes fill-bar {
+        from {
+          width: 0%;
+        }
+        to {
+          width: 100%;
+        }
+      }
+
+      .progress-fill {
+        animation: fill-bar 8s ease-out forwards;
+      }
+
+      /* Custom Modal Styling (to replace alert()) */
+      #error-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+      }
+    </style>
+  </head>
+  <body class="flex justify-center min-h-screen pt-10 pb-20">
+    <!-- Mobile Device Container -->
+    <div
+      id="app-container"
+      class="bg-white rounded-[3rem] shadow-2xl overflow-hidden max-w-sm w-full border-[10px] border-gray-200 min-h-[600px] relative"
+    >
+      <!-- ============================================== -->
+      <!-- 1. SPLASH SCREEN (Initial State) -->
+      <!-- ============================================== -->
+      <div id="splash-screen" class="deep-green-bg">
+        <div class="flex flex-col items-center text-center logo-animated">
+          <svg
+            width="150"
+            height="150"
+            viewBox="0 0 200 200"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="100"
+              cy="100"
+              r="95"
+              fill="none"
+              stroke="white"
+              stroke-width="8"
+            />
+            <path
+              d="M100 140 L50 100 Q60 60 100 50 Q140 60 150 100 Z"
+              fill="#34D399"
+              class="animate-leaf"
+            />
+            <rect x="85" y="80" width="30" height="30" fill="transparent" />
+            <path
+              d="M100 80 A15 15 0 0 0 85 95 C85 105 115 105 115 95 A15 15 0 0 0 100 80 Z M98 98 L98 110 L102 110 L102 98 Z"
+              fill="#1C5B32"
+            />
+            <rect x="95" y="40" width="10" height="20" fill="white" />
+            <rect x="90" y="45" width="20" height="10" fill="white" />
+            <rect
+              x="90"
+              y="145"
+              width="20"
+              height="30"
+              rx="3"
+              ry="3"
+              fill="none"
+              stroke="white"
+              stroke-width="2"
+            />
+            <text
+              x="100"
+              y="178"
+              font-size="10"
+              fill="white"
+              text-anchor="middle"
+              font-weight="600"
+            >
+              Health Solution
+            </text>
+          </svg>
+          <h2 class="text-3xl font-extrabold text-white mt-4">
+            Salone Plant Doctor
+          </h2>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 2. MAIN SCREEN (Landing Page) -->
+      <!-- ============================================== -->
+      <div
+        id="main-screen"
+        class="hidden-screen absolute inset-0 flex flex-col"
+      >
+        <input type="file" id="image-input" accept="image/*" class="hidden" />
+
+        <!-- Header Section -->
+        <div class="p-6 pt-10 flex justify-between items-center deep-green-bg">
+          <div class="flex items-center space-x-3">
+            <div
+              class="w-10 h-10 bg-gray-200 rounded-full border-2 border-white"
+            ></div>
+            <h1 class="text-xl font-medium text-white">
+              Welcome, <span class="font-bold">Fatu!</span>
+            </h1>
+          </div>
+          <button class="text-white hover:opacity-80">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Scrollable Content Area -->
+        <div class="p-4 bg-gray-50 flex-grow overflow-y-auto">
+          <!-- INSTANT SCAN SECTION (Primary Call to Action) -->
+          <button
+            id="scan-button"
+            class="w-full text-left deep-green-bg rounded-2xl p-6 text-center shadow-lg transform transition duration-300 hover:scale-[1.01]"
+          >
+            <h2 class="text-2xl font-extrabold text-white mb-4">
+              Instant Scan
+            </h2>
+            <div
+              class="w-20 h-20 mx-auto accent-green-bg rounded-full flex items-center justify-center mb-4 border-4 border-white"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-10 w-10 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.218A2 2 0 0110.437 3h3.126a2 2 0 011.664.89l.812 1.218A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+            </div>
+            <p class="text-lg font-semibold text-white">
+              Tap to Diagnose Plant
+            </p>
+            <p class="text-sm text-gray-200 mt-1">
+              Snap a picture of a sick leaf to get an instant AI analysis.
+            </p>
+          </button>
+
+          <!-- QUICK ACCESS CARDS -->
+          <h3 class="text-lg font-bold text-gray-800 mt-8 mb-4">
+            Quick Access
+          </h3>
+          <div class="grid grid-cols-3 gap-3">
+            <button
+              class="bg-white p-4 rounded-xl shadow-md flex flex-col items-center justify-center transform hover:scale-[1.05] transition duration-150"
+            >
+              <span class="text-2xl text-green-600 mb-1">🌿</span>
+              <span class="text-xs font-semibold text-gray-700 text-center"
+                >My History</span
+              >
+            </button>
+            <button
+              class="bg-white p-4 rounded-xl shadow-md flex flex-col items-center justify-center transform hover:scale-[1.05] transition duration-150"
+            >
+              <span class="text-2xl text-green-600 mb-1">💬</span>
+              <span class="text-xs font-semibold text-gray-700 text-center"
+                >Chat Experts</span
+              >
+            </button>
+            <button
+              class="bg-white p-4 rounded-xl shadow-md flex flex-col items-center justify-center transform hover:scale-[1.05] transition duration-150"
+            >
+              <span class="text-2xl text-green-600 mb-1">🛒</span>
+              <span class="text-xs font-semibold text-gray-700 text-center"
+                >Remedies & Shop</span
+              >
+            </button>
+          </div>
+
+          <!-- LATEST TIPS SECTION -->
+          <h3 class="text-lg font-bold text-gray-800 mt-8 mb-4">
+            Latest Health Tips
+          </h3>
+          <div class="flex flex-col space-y-3 pb-8">
+            <div
+              class="bg-white p-4 rounded-xl shadow-sm flex items-center space-x-4 border border-gray-100 cursor-pointer hover:bg-gray-100 transition duration-150"
+            >
+              <div
+                class="w-16 h-16 rounded-lg deep-green-bg flex items-center justify-center text-white text-3xl"
+              >
+                🌱
+              </div>
+              <div>
+                <p class="font-semibold text-gray-800">Composting 101</p>
+                <p class="text-sm text-gray-500">
+                  How to create nutrient-rich soil at home.
+                </p>
+              </div>
+            </div>
+            <div
+              class="bg-white p-4 rounded-xl shadow-sm flex items-center space-x-4 border border-gray-100 cursor-pointer hover:bg-gray-100 transition duration-150"
+            >
+              <div
+                class="w-16 h-16 rounded-lg deep-green-bg flex items-center justify-center text-white text-3xl"
+              >
+                💧
+              </div>
+              <div>
+                <p class="font-semibold text-gray-800">
+                  Drought-Resistant Plants
+                </p>
+                <p class="text-sm text-gray-500">
+                  Top 5 resilient crops for the dry season.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- End Scrollable Content -->
+
+        <!-- Bottom Navigation Bar -->
+        <div
+          class="bg-white border-t border-gray-200 py-3 px-6 flex justify-around items-center rounded-b-[2.8rem] shadow-inner"
+        >
+          <button
+            class="flex flex-col items-center text-green-600 transition duration-150"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              class="h-6 w-6"
+            >
+              <path
+                d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a1.5 1.5 0 01.413 1.06V19.5a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9a1.5 1.5 0 01.413-1.06l8.69-8.69z"
+              />
+              <path
+                d="M12.75 12a.75.75 0 00-1.5 0v5.25c0 .414.336.75.75.75H18a.75.75 0 00.75-.75v-5.25a.75.75 0 00-.75-.75h-5.25z"
+              />
+            </svg>
+            <span class="text-xs font-medium">Home</span>
+          </button>
+          <button
+            class="w-14 h-14 accent-green-bg rounded-full -mt-8 flex items-center justify-center text-white border-4 border-white shadow-xl"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-8 w-8"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.218A2 2 0 0110.437 3h3.126a2 2 0 011.664.89l.812 1.218A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+          </button>
+          <button
+            class="flex flex-col items-center text-gray-500 hover:text-green-600 transition duration-150"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v10m-8 2h8m-8 0l-3 3"
+              />
+            </svg>
+            <span class="text-xs font-medium">Settings</span>
+          </button>
+        </div>
+      </div>
+      <!-- End Main Screen -->
+
+      <!-- ============================================== -->
+      <!-- 3. LOADING SCREEN (Diagnosis In Progress) -->
+      <!-- ============================================== -->
+      <div
+        id="loading-screen"
+        class="hidden-screen absolute inset-0 flex flex-col items-center justify-center p-6 text-center deep-green-bg"
+      >
+        <div class="logo-animated">
+          <svg
+            width="120"
+            height="120"
+            viewBox="0 0 200 200"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="100"
+              cy="100"
+              r="95"
+              fill="none"
+              stroke="white"
+              stroke-width="8"
+            />
+            <path
+              d="M100 140 L50 100 Q60 60 100 50 Q140 60 150 100 Z"
+              fill="#34D399"
+              class="animate-leaf"
+            />
+            <rect x="85" y="80" width="30" height="30" fill="transparent" />
+            <path
+              d="M100 80 A15 15 0 0 0 85 95 C85 105 115 105 115 95 A15 15 0 0 0 100 80 Z M98 98 L98 110 L102 110 L102 98 Z"
+              fill="#1C5B32"
+            />
+            <rect x="95" y="40" width="10" height="20" fill="white" />
+            <rect x="90" y="45" width="20" height="10" fill="white" />
+            <rect
+              x="90"
+              y="145"
+              width="20"
+              height="30"
+              rx="3"
+              ry="3"
+              fill="none"
+              stroke="white"
+              stroke-width="2"
+            />
+            <text
+              x="100"
+              y="178"
+              font-size="10"
+              fill="white"
+              text-anchor="middle"
+              font-weight="600"
+            >
+              Health Solution
+            </text>
+          </svg>
+        </div>
+        <h2 class="text-3xl font-extrabold text-white mt-8">
+          Analyzing Plant...
+        </h2>
+        <p class="text-lg text-gray-200 mt-2">
+          Just a moment while our AI runs the diagnosis.
+        </p>
+        <div class="mt-8 w-full bg-gray-600 rounded-full h-2.5">
+          <div
+            id="loading-bar"
+            class="bg-white h-2.5 rounded-full progress-fill"
+          ></div>
+        </div>
+      </div>
+      <!-- End Loading Screen -->
+
+      <!-- ============================================== -->
+      <!-- 4. RESULTS SCREEN (Diagnosis Page) -->
+      <!-- ============================================== -->
+      <div
+        id="results-screen"
+        class="hidden-screen absolute inset-0 flex flex-col"
+      >
+        <!-- Header/Image Area -->
+        <div
+          id="result-image-bg"
+          class="w-full h-48 bg-cover bg-center relative flex flex-col justify-between"
+        >
+          <div class="p-4 flex items-center justify-between">
+            <button
+              onclick="showScreen('main-screen')"
+              class="bg-white/40 backdrop-blur-sm p-2 rounded-full text-white hover:bg-white/60 transition duration-150"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
+              </svg>
+            </button>
+            <h2 class="text-xl font-bold text-white shadow-sm">
+              Diagnosis Results
+            </h2>
+            <div class="w-10 h-10"></div>
+            <!-- Spacer -->
+          </div>
+        </div>
+
+        <!-- Scrollable Content Area -->
+        <div
+          class="p-4 bg-gray-50 flex-grow overflow-y-auto -mt-10 rounded-t-3xl bg-white shadow-xl"
+        >
+          <!-- Diagnosis Summary Card -->
+          <div class="deep-green-bg p-6 rounded-xl shadow-lg mb-6 -mt-10">
+            <h3
+              id="diagnosis-title"
+              class="text-3xl font-extrabold text-white"
+            ></h3>
+            <p
+              id="diagnosis-cause"
+              class="text-sm font-light text-gray-200 mt-1"
+            ></p>
+          </div>
+
+          <!-- Recommended Treatment -->
+          <h3 class="text-xl font-bold text-gray-800 mb-4">
+            Recommended Treatment
+          </h3>
+          <div id="treatment-list" class="flex flex-col space-y-3">
+            <!-- Treatment steps will be inserted here by JavaScript -->
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="mt-8 space-y-3 pb-8">
+            <button
+              class="w-full py-3 deep-green-bg text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition duration-150"
+            >
+              💬 Chat with a Plant Doctor
+            </button>
+            <button
+              class="w-full py-3 bg-gray-200 text-gray-800 font-bold rounded-xl shadow-md hover:bg-gray-300 transition duration-150"
+            >
+              🛒 Find Remedies & Shop Products
+            </button>
+          </div>
+        </div>
+        <!-- End Scrollable Content -->
+
+        <!-- Bottom Navigation Bar (Simplified) -->
+        <div
+          class="bg-white border-t border-gray-200 py-3 px-6 flex justify-around items-center rounded-b-[2.8rem] shadow-inner"
+        >
+          <button
+            onclick="showScreen('main-screen')"
+            class="flex flex-col items-center text-gray-500 hover:text-green-600 transition duration-150"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              class="h-6 w-6"
+            >
+              <path
+                d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a1.5 1.5 0 01.413 1.06V19.5a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9a1.5 1.5 0 01.413-1.06l8.69-8.69z"
+              />
+              <path
+                d="M12.75 12a.75.75 0 00-1.5 0v5.25c0 .414.336.75.75.75H18a.75.75 0 00.75-.75v-5.25a.75.75 0 00-.75-.75h-5.25z"
+              />
+            </svg>
+            <span class="text-xs font-medium">Home</span>
+          </button>
+          <button
+            class="w-14 h-14 accent-green-bg rounded-full -mt-8 flex items-center justify-center text-white border-4 border-white shadow-xl"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-8 w-8"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.218A2 2 0 0110.437 3h3.126a2 2 0 011.664.89l.812 1.218A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+          </button>
+          <button
+            class="flex flex-col items-center text-gray-500 hover:text-green-600 transition duration-150"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v10m-8 2h8m-8 0l-3 3"
+              />
+            </svg>
+            <span class="text-xs font-medium">Settings</span>
+          </button>
+        </div>
+      </div>
+      <!-- End Results Screen -->
+
+      <!-- ============================================== -->
+      <!-- 5. CUSTOM ERROR MODAL (Replaces alert()) -->
+      <!-- ============================================== -->
+      <div id="error-modal" class="hidden-screen">
+        <div
+          class="bg-white p-6 rounded-2xl shadow-2xl max-w-xs w-full text-center"
+        >
+          <h3 class="text-xl font-bold text-red-600 mb-3">Diagnosis Failed</h3>
+          <p id="error-message" class="text-gray-700 mb-4"></p>
+          <button
+            onclick="hideErrorModal()"
+            class="w-full py-2 deep-green-bg text-white font-semibold rounded-lg hover:opacity-90 transition duration-150"
+          >
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- End Mobile Container -->
+
+    <script>
+      // =========================================================================
+      // CRITICAL STEP: PASTE YOUR GEMINI API KEY HERE!
+      // =========================================================================
+      // This key will override the automatic environment key and ensure the app works.
+      // Replace the empty string "" with your actual API key (it must be a string).
+      const USER_API_KEY_OVERRIDE = "AIzaSyBY4MePiuKO7FKZzrgAzz5jBo3cpmDTt3k"; // ")
+
+      // --- UI Elements ---
+      const screens = [
+        "splash-screen",
+        "main-screen",
+        "loading-screen",
+        "results-screen",
+      ];
+      const imageInput = document.getElementById("image-input");
+      const scanButton = document.getElementById("scan-button");
+      const resultImageBg = document.getElementById("result-image-bg");
+      const diagnosisTitle = document.getElementById("diagnosis-title");
+      const diagnosisCause = document.getElementById("diagnosis-cause");
+      const treatmentList = document.getElementById("treatment-list");
+      const errorModal = document.getElementById("error-modal");
+      const errorMessageDisplay = document.getElementById("error-message");
+
+      // --- Gemini API Configuration ---
+      const MODEL_NAME = "gemini-2.5-flash-preview-05-20";
+      const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent`;
+
+      const diagnosisSchema = {
+        type: "OBJECT",
+        properties: {
+          title: {
+            type: "STRING",
+            description:
+              "The name of the plant disease or deficiency, e.g., 'Early Blight' or 'Nitrogen Deficiency'.",
+          },
+          cause: {
+            type: "STRING",
+            description:
+              "A brief, one-sentence explanation of the cause of the disease or issue.",
+          },
+          treatments: {
+            type: "ARRAY",
+            description:
+              "A list of 3-5 actionable steps for treatment and recovery, tailored to a farmer or home gardener.",
+            items: {
+              type: "STRING",
+            },
+          },
+        },
+        required: ["title", "cause", "treatments"],
+      };
+
+      /** Shows the requested screen and hides all others */
+      function showScreen(screenId) {
+        screens.forEach((id) => {
+          const screen = document.getElementById(id);
+          if (screen) {
+            screen.classList.add("hidden-screen");
+          }
+        });
+        const activeScreen = document.getElementById(screenId);
+        if (activeScreen) {
+          activeScreen.classList.remove("hidden-screen");
+        }
+      }
+
+      /** Shows the custom error modal */
+      function showErrorModal(message) {
+        errorMessageDisplay.textContent = message;
+        errorModal.classList.remove("hidden-screen");
+      }
+
+      /** Hides the custom error modal */
+      function hideErrorModal() {
+        errorModal.classList.add("hidden-screen");
+        showScreen("main-screen"); // Return to main screen after hiding error
+      }
+
+      /** Handles the splash screen animation and transition */
+      function initSplash() {
+        setTimeout(() => {
+          const splash = document.getElementById("splash-screen");
+          splash.style.opacity = "0";
+          setTimeout(() => {
+            showScreen("main-screen");
+          }, 500);
+        }, 3000);
+      }
+
+      window.onload = initSplash;
+
+      /** --- Image Selection & Analysis Logic --- */
+
+      // Trigger file input when the main scan button is clicked
+      scanButton.addEventListener("click", () => {
+        // Check for API key before allowing scan
+        if (!USER_API_KEY_OVERRIDE) {
+          showErrorModal(
+            "Please paste your Gemini API key into the USER_API_KEY_OVERRIDE variable in the code to proceed with the diagnosis."
+          );
+          return;
+        }
+        imageInput.click();
+      });
+
+      // Handle the file selection
+      imageInput.addEventListener("change", async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Show loading screen and prepare for analysis
+        showScreen("loading-screen");
+
+        const base64Image = await fileToBase64(file);
+        const mimeType = file.type;
+
+        // Update the results screen image background
+        resultImageBg.style.backgroundImage = `url('${URL.createObjectURL(
+          file
+        )}')`;
+
+        // Call the Gemini API directly
+        try {
+          const diagnosis = await fetchDiagnosis(base64Image, mimeType);
+          updateResultsScreen(diagnosis);
+          showScreen("results-screen");
+        } catch (error) {
+          console.error("Diagnosis failed:", error);
+          showErrorModal(
+            `Diagnosis failed: ${error.message}. Please check console for details.`
+          );
+          showScreen("main-screen");
+        }
+      });
+
+      /** Converts a File object to a Base64 string */
+      function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          // We only need the base64 part, which starts after the comma
+          reader.onload = () => resolve(reader.result.split(",")[1]);
+          reader.onerror = (error) => reject(error);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      /** Calls the Gemini API to get AI diagnosis with structured JSON output */
+      async function fetchDiagnosis(base64Image, mimeType) {
+        // Use the API key provided by the user override
+        const apiKey = USER_API_KEY_OVERRIDE;
+
+        if (!apiKey) {
+          // This check is already done on the button click, but kept as a safeguard
+          throw new Error("API key is not available.");
+        }
+
+        const prompt =
+          "Analyze the provided image of a plant leaf or part. Identify the disease or deficiency, state the cause, and provide clear, actionable treatment steps suitable for a local farmer or gardener. The response must be a single JSON object matching the requested schema.";
+
+        const payload = {
+          contents: [
+            {
+              role: "user",
+              parts: [
+                { text: prompt },
+                {
+                  inlineData: {
+                    mimeType: mimeType,
+                    data: base64Image,
+                  },
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: diagnosisSchema,
+          },
+        };
+
+        // --- Retry Logic (Exponential Backoff) ---
+        const maxRetries = 3;
+        let lastError;
+
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+          try {
+            const response = await fetch(`${API_URL}?key=${apiKey}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+              const errorMsg = result.error?.message || "Unknown API Error";
+              throw new Error(
+                `API Request failed (Status ${response.status}): ${errorMsg}`
+              );
+            }
+
+            const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!jsonText) {
+              throw new Error("AI response was empty or malformed.");
+            }
+
+            // Parse and return the structured JSON diagnosis
+            const parsedJson = JSON.parse(jsonText);
+            return { diagnosis: parsedJson };
+          } catch (error) {
+            lastError = error;
+            console.error(`Attempt ${attempt + 1} failed:`, error.message);
+
+            if (attempt < maxRetries - 1) {
+              const delay = Math.pow(2, attempt) * 1000;
+              await new Promise((resolve) => setTimeout(resolve, delay));
+            }
+          }
+        }
+
+        throw new Error(
+          lastError
+            ? lastError.message
+            : "Failed to get diagnosis after multiple retries."
+        );
+      }
+
+      /** Populates the results screen with the AI diagnosis */
+      function updateResultsScreen(data) {
+        // The structure is now { diagnosis: { title: "...", cause: "...", treatments: [...] } }
+        if (!data || !data.diagnosis) {
+          throw new Error("Invalid diagnosis data structure received from AI.");
+        }
+
+        const diagnosis = data.diagnosis;
+
+        diagnosisTitle.textContent = diagnosis.title || "Unknown Condition";
+        diagnosisCause.textContent =
+          diagnosis.cause || "No detailed cause was found.";
+
+        treatmentList.innerHTML = ""; // Clear previous treatments
+        const treatments = diagnosis.treatments || [];
+
+        treatments.forEach((treatment, index) => {
+          const treatmentItem = document.createElement("div");
+          treatmentItem.className =
+            "bg-white p-3 rounded-xl shadow-md border border-green-100 flex items-start text-left space-x-3";
+          treatmentItem.innerHTML = `
+                    <span class="text-2xl mt-1 text-green-600 font-bold">${
+                      index + 1
+                    }.</span>
+                    <p class="text-sm font-semibold text-gray-700">${treatment}</p>
+                `;
+          treatmentList.appendChild(treatmentItem);
+        });
+
+        if (treatments.length === 0) {
+          treatmentList.innerHTML =
+            '<p class="text-gray-500 p-4">The AI could not generate specific treatment steps for this image. Please try again with a clearer photo or a different type of plant issue.</p>';
+        }
+      }
+    </script>
+  </body>
+</html>
